@@ -65,6 +65,9 @@ class WaypointUpdater(object):
         closest_coord = self.waypoints_2d[closest_idx]
         prev_coord    = self.waypoints_2d[closest_idx - 1]
 
+#        rospy.loginfo('wpoint-closest idx : %d, wpoint-closest coord : (%5.2f, %5.2f)', closest_idx, \
+#            closest_coord[0] , closest_coord[1])
+
         # Equation for hyperplane through closest_coords
         cl_vect = np.array(closest_coord)
         prev_vect = np.array(prev_coord)
