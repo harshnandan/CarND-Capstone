@@ -9,14 +9,34 @@ from keras.layers import BatchNormalization
 from keras.models import Sequential
 from keras.backend import tf as ktf
 import keras.losses
+import glob
 
 
 BATCH_SIZE = 32
 num_classes = 3
 
+# Initialize dictionary var that will contain collection of
+# training data
+train_samples = {}
+
+# Scan for all available training data
+training_file_list = glob.glob('Training2018*')
+
+for training_file in training_file_list:
+    fid  = open(training_file,'rb')
+    temp_data = pickle.load(fid)
+
+    # Store it inside dictionary
+    if train_samples.has_key('Xtrain'):
+        train_samples['Xtrain'] = np.append(train_samples['Xtrain'], temp_data['Xtrain'], axis=0)
+        train_samples['YLabel'].extend(temp_data['YLabel'])
+        train_samples['EgoTrafficDist'].extend(temp_data['EgoTrafficDist'])
+    else:
+        train_samples = temp_data
+
 # compile and train the model using the generator function
-fid = open('Training2018112363121','rb')
-train_samples = pickle.load(fid)
+# fid = open('Training2018112363121','rb')
+# train_samples = pickle.load(fid)
 
 def resize_image(image):
     return ktf.image.resize_images(image, (600, 800))
@@ -135,7 +155,7 @@ model.add(Dense(10, activation='relu'))
 
 
 # Final layer (1 neurons output)
-model.add(Dense(num_classes))
+model.add(Dense(num_classes, activation='softmax'))
 
 model.compile(loss=keras.losses.categorical_crossentropy, optimizer='adam', metrics=['accuracy'])
 #model.fit_generator(train_generator, samples_per_epoch=len(train_samples),
