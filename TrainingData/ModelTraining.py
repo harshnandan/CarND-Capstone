@@ -68,7 +68,7 @@ def split_data(whole_data, split_frac):
     train_data['EgoTrafficDist'] = [whole_data['EgoTrafficDist'][val] for val in train_idx_array]
 
     test_data['Xtrain'] = whole_data['Xtrain'][test_idx_array,:,:,:]
-    test_data['YLabel'] = [whole_data['YLabel'][val] for val in test_idx_array]
+    test_data['YLabel'] = [whole_data['YLabel'][val] for val in test_idx_array]+
     test_data['EgoTrafficDist']  = [whole_data['EgoTrafficDist'][val] for val in test_idx_array]
 
     return (train_data, test_data)
