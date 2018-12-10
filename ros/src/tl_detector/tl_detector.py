@@ -16,14 +16,19 @@ STATE_COUNT_THRESHOLD = 3
 
 class TLDetector(object):
     def __init__(self):
-        rospy.init_node('tl_detector')
+        rospy.init_node('tl_detector', anonymous=True)
 
         self.MODE = 'SIMULATION'
+        self.RecordTrainingData = True
+        self.wp_diff = 0
+        
         self.pose = None
         self.waypoints = None
         self.camera_image = None
+        #
         self.waypoints_2d = None
         self.waypoints_tree = None
+        self.savedImageCount = 0
         
         self.lights = []
         self.traffic_light_wp_indexes = []
@@ -111,7 +116,7 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        closest_index = KDTree.query([x, y], 1)[1]
+        closest_index = self.waypoints_tree.query([x, y], 1)[1]
         return closest_index
 
     def get_light_state(self, light):
@@ -127,8 +132,18 @@ class TLDetector(object):
         if(not self.has_image):
             self.prev_light_loc = None
             return False
-        
+        rospy.loginfo('get_light_state')
         if self.MODE == 'SIMULATION':
+            rospy.loginfo('SIMULATION')
+            if self.RecordTrainingData == True:
+                cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+                path = r'/home/student/CarND-Capstone/ros/src/tl_detector/light_classification/train_data/img_{}.jpg'.format(self.savedImageCount)
+                cv2.imwrite(path , cv_image )
+#                 cv2.imshow('image', cv_image)
+#                 cv2.waitKey(0)
+                rospy.loginfo('Writing image to {}'.format(path))
+                self.savedImageCount += 1
+            
             return light.state
         else:
             cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
@@ -162,11 +177,13 @@ class TLDetector(object):
                 diff = d
                 closest_light = light
                 line_wp_idx = line_closest_wp_idx
-            
+        self.wp_diff = diff
 
         if closest_light:
-            rospy.logwar("Closest traffic light red line at waypoint index {}".format(line_wp_idx))
             state = self.get_light_state(closest_light)
+            rospy.loginfo("Closest traffic light red line at waypoint index: {}".format(line_wp_idx))
+            rospy.loginfo("wp_diff: {}".format(self.wp_diff))
+            rospy.loginfo("TL Color: {}".format(state))
             return line_wp_idx, state
         
         return -1, TrafficLight.UNKNOWN

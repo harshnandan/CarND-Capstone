@@ -44,6 +44,12 @@ class Bridge(object):
         self.yaw = None
         self.angular_vel = 0.
         self.bridge = CvBridge()
+        # Following two variables added by HN to control the frequency
+        # at which images are published. As soon as camera is turned on 
+        # the latency becomes too much for dbw commabd to be meaningful
+        # hence reducing publishing rate should be helpful
+        self.PUBLISH_EVERY_NTH_IMAGE = 1
+        self.imgCount = 0
 
         self.callbacks = {
             '/vehicle/steering_cmd': self.callback_steering,
@@ -175,13 +181,18 @@ class Bridge(object):
         self.publishers['dbw_status'].publish(Bool(data))
 
     def publish_camera(self, data):
-        imgString = data["image"]
-        image = PIL_Image.open(BytesIO(base64.b64decode(imgString)))
-        image_array = np.asarray(image)
-
-        image_message = self.bridge.cv2_to_imgmsg(image_array, encoding="rgb8")
-        self.publishers['image'].publish(image_message)
-
+        # HN: added logic to publish every nth image 
+        if self.imgCount % self.PUBLISH_EVERY_NTH_IMAGE == 0:
+            imgString = data["image"]
+            image = PIL_Image.open(BytesIO(base64.b64decode(imgString)))
+            image_array = np.asarray(image)
+    
+            image_message = self.bridge.cv2_to_imgmsg(image_array, encoding="rgb8")
+            self.publishers['image'].publish(image_message)
+            
+        self.imgCount += 1
+        
+        
     def callback_steering(self, data):
         self.server('steer', data={'steering_angle': str(data.steering_wheel_angle_cmd)})
 
