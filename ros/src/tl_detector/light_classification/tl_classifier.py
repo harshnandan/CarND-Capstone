@@ -15,7 +15,7 @@ class TLClassifier(object):
         self.IOU_THRESHOLD = 0.05
         self.classId = ('Green', 'Red', 'Yellow') 
         self.CURR_DIR = os.getcwd()
-        self.MODEL_PATH = self.CURR_DIR + '/fasterRCNNV2_sim_site_pb_model_10000_rank_1/frozen_inference_graph.pb'
+        self.MODEL_PATH = os.path.dirname(os.path.realpath(__file__)) + '/fasterRCNNV2_sim_site_pb_model_10000_rank_1/frozen_inference_graph.pb'
         
         detection_graph = tf.Graph()
         with detection_graph.as_default():
@@ -51,15 +51,15 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        detected_light = {}
+        # detect lights
         image_expanded = np.expand_dims(image, axis=0)
         time0 = time.time()
         boxes, scores, classes, num = self.sess.run( [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
             feed_dict={self.image_tensor: image_expanded})
         
-        #print ('processing time: {:.2f}s'.format(time.time() - time0))
-        #self.draw_a_detection_result( boxes, scores, classes, num, image)
+        #print ('\nprocessing time: {:.2f}s'.format(time.time() - time0))
         
+        # threshold detectected bixes
         boxes_thresholded = []
         scores_thresholded = []
         classes_thresholded = []
@@ -72,41 +72,53 @@ class TLClassifier(object):
         
         #print('classes_thresholded \n{}'.format(classes_thresholded))
         #print('scores_thresholded \n{}'.format(scores_thresholded))
-        for i in range(len(boxes_thresholded)):
-            for j in range(len(boxes_thresholded)):
-                if i != j:
-                    iou = self.check_overlap_fnc(boxes_thresholded[i], boxes_thresholded[j])
-                    if iou > self.IOU_THRESHOLD:
-                        if scores_thresholded[i] >= scores_thresholded[j]:
-                            boxes_thresholded.pop(j)
-                            scores_thresholded.pop(j)
-                            classes_thresholded.pop(j)
-                        elif scores_thresholded[i] < scores_thresholded[j]:
-                            boxes_thresholded.pop(i)
-                            scores_thresholded.pop(i)
-                            classes_thresholded.pop(i)                            
         
-        lightCount = [0, 0, 0] # green, red, yellow
-        for i in range(len(classes_thresholded)):
-            if classes_thresholded[i] == 1:
-                lightCount[0] += 1
-            if classes_thresholded[i] == 2:
-                lightCount[1] += 1
-            if classes_thresholded[i] == 3:
-                lightCount[2] += 1
-
-        max_light = lightCount.index(max(lightCount) )
-        if max_light == 0:
-            #print('light is : green')
-            return TrafficLight.GREEN
-        if max_light == 1:
-            #print('light is : red')
-            return TrafficLight.RED
-        if max_light == 2:
-            #print('light is : yellow')
-            return TrafficLight.YELLOW
+        # if there are detections
+        if len(scores_thresholded) > 0:
+            # check if there is overlapping box,
+            # if two boxes overlap keep the one with higher confidence            
+            for i in range(len(boxes_thresholded)):
+                for j in range(len(boxes_thresholded)):
+                    if i != j:
+                        iou = self.check_overlap_fnc(boxes_thresholded[i], boxes_thresholded[j])
+                        if iou > self.IOU_THRESHOLD:
+                            if scores_thresholded[i] >= scores_thresholded[j]:
+                                boxes_thresholded.pop(j)
+                                scores_thresholded.pop(j)
+                                classes_thresholded.pop(j)
+                            elif scores_thresholded[i] < scores_thresholded[j]:
+                                boxes_thresholded.pop(i)
+                                scores_thresholded.pop(i)
+                                classes_thresholded.pop(i)                            
+            
+            # count the majority
+            lightCount = [0, 0, 0] # green, red, yellow
+            for i in range(len(classes_thresholded)):
+                if classes_thresholded[i] == 1:
+                    lightCount[0] += 1
+                if classes_thresholded[i] == 2:
+                    lightCount[1] += 1
+                if classes_thresholded[i] == 3:
+                    lightCount[2] += 1
+            
+            #print('lightCount {}'.format(lightCount))
+            
+            #self.draw_a_detection_result( boxes, scores, classes, num, image)
+            
+            max_light = lightCount.index(max(lightCount) )
+            if max_light == 0:
+                #print('light is : green')
+                return TrafficLight.GREEN
+            if max_light == 1:
+                #print('light is : red')
+                return TrafficLight.RED
+            if max_light == 2:
+                #print('light is : yellow')
+                return TrafficLight.YELLOW
+            else:
+                return TrafficLight.UNKNOWN
         else:
-            return TrafficLight.UNKNOWN
+                return TrafficLight.UNKNOWN
     
     def check_overlap_fnc(self, bb1, bb2):
         assert bb1[0] < bb1[2]
@@ -137,7 +149,7 @@ class TLClassifier(object):
         from utils import label_map_util
         from utils import visualization_utils as vis_util
         
-        label_map = label_map_util.load_labelmap(os.getcwd() + '/train_data/label_map.pbtxt')
+        label_map = label_map_util.load_labelmap(os.path.dirname(os.path.realpath(__file__)) + '/label_map.pbtxt')
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=3, use_display_name=True)
         category_index = label_map_util.create_category_index(categories)
         
