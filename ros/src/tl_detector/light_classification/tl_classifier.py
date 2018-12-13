@@ -11,7 +11,7 @@ class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
         self.config_path = 'config.json'  # Loading config file for tiny-yolo processing
-        self.weights_path = 'tiny_yolo_trafficred3.h5'
+        self.weights_path = 'tiny_yolo_finalweight.h5'
         print(os.getcwd())
         with open(self.config_path) as config_buffer:
             config = json.load(config_buffer)

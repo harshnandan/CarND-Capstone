@@ -105,7 +105,7 @@ class TLDetector(object):
 
         curr_time = time.time()
         elapsed_time = curr_time - self.img_acqustion_tstamp
-        print('Time-elapsed %5.2f'%(elapsed_time,))
+     #   print('Time-elapsed %5.2f'%(elapsed_time,))
 
         if (elapsed_time < 1.3): #  Don't acuire image  if it less than 0.8 sec, since last acquisition time
             return

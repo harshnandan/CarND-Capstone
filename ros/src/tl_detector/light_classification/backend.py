@@ -5,7 +5,7 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.merge import concatenate
 
 
-TINY_YOLO_BACKEND_PATH  = "tiny_yolo_backend.h5"   # should be hosted on a server
+TINY_YOLO_BACKEND_PATH  = "tiny_yolo_reassemble.h5"   # should be hosted on a server
 
 
 class BaseFeatureExtractor(object):
@@ -57,7 +57,7 @@ class TinyYoloFeature(BaseFeatureExtractor):
             x = LeakyReLU(alpha=0.1)(x)
 
         self.feature_extractor = Model(input_image, x)
-        self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
+#        self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
 
 
     def normalize(self, image):
