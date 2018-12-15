@@ -6,12 +6,22 @@ import os
 import keras.backend as K
 import tensorflow as tf
 import time
+import os
 
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
         self.config_path = 'config.json'  # Loading config file for tiny-yolo processing
-        self.weights_path = 'tiny_yolo_finalweight.h5'
+
+        # Check if weight file is exist or not, if not
+        # create merge weight file from archive files inside
+        # folder "yolo_weight_archive"
+        if os.path.isfile('tiny_yolo_finalweight.h5'):
+            self.weights_path = 'tiny_yolo_finalweight.h5'
+        else:
+            os.system('cat yolo_weight_archive/tiny_yolo_archivea* > tiny_yolo_finalweight.h5')
+            self.weights_path = 'tiny_yolo_finalweight.h5'
+
         print(os.getcwd())
         with open(self.config_path) as config_buffer:
             config = json.load(config_buffer)
