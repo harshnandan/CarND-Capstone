@@ -3,7 +3,7 @@
 We developed the software stack to guide a self-driving car around a test track. The project implements traffic light detector and classifier, trajectory planning and control with Robot Operating System (ROS) framework.
 
 
-### Drive.Auto Team Members
+### Drive.Auto Team Members 
 
 Harsh Nandan (harsh.nandan@gmail.com, [github](https://github.com/harshnandan)) - team lead
 
