@@ -33,18 +33,7 @@ class TLDetector(object):
         self.traffic_ego_dist = None
         self.light_state = -1
 
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
-        '''
-        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
-        helps you acquire an accurate ground truth data source for the traffic light
-        classifier by sending the current color state of all traffic lights in the
-        simulator. When testing on the vehicle, the color state will not be available. You'll need to
-        rely on the position of the light and the camera image to predict it.
-        '''
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -60,8 +49,8 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
-        self.RUNNING_MODE = 'SIMULATION'     # Mode of running, SIMULATION OR REALDRIVING
-        self.COLLECT_DATA = True
+        self.RUNNING_MODE = 'REALDRIVING'     # Mode of running, SIMULATION OR REALDRIVING
+        self.COLLECT_DATA = False
         self.RANDOM_DIST_IDX  = None      # Random distance between ego vehicle
                                           # to closest traffic light
         self.TRAINING_IMAGE = None
@@ -70,13 +59,26 @@ class TLDetector(object):
         self.TRAINING_DIST  = []
         self.TRAINING_ISSTORED = False
 
+        self.img_acqustion_tstamp = time.time()     # Track time-stamp of image acquisition
+
         if (self.COLLECT_DATA):
             tstamp = time.localtime()
             self.TRAINING_FILE = 'Training%d%d%d%d%d%d' \
                          %(tstamp.tm_year, tstamp.tm_mon, tstamp.tm_mday, \
                            tstamp.tm_hour, tstamp.tm_min, tstamp.tm_sec)
 
+        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
+        '''
+        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
+        helps you acquire an accurate ground truth data source for the traffic light
+        classifier by sending the current color state of all traffic lights in the
+        simulator. When testing on the vehicle, the color state will not be available. You'll need to
+        rely on the position of the light and the camera image to predict it.
+        '''
+        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
         rospy.spin()
 
     def pose_cb(self, msg):
@@ -100,12 +102,22 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
+
+        curr_time = time.time()
+        elapsed_time = curr_time - self.img_acqustion_tstamp
+     #   print('Time-elapsed %5.2f'%(elapsed_time,))
+
+        if (elapsed_time < 1.3): #  Don't acuire image  if it less than 0.8 sec, since last acquisition time
+            return
+
+        self.img_acqustion_tstamp = curr_time   # Otherwise acquire it
+
         self.has_image = True
         self.camera_image = msg
-        cv_img = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
         light_wp, state = self.process_traffic_lights()
 
         if (self.COLLECT_DATA) and not(self.TRAINING_ISSTORED):
+            cv_img = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
             if ( state != -1 ) and \
                             ( self.traffic_ego_dist < 160.0 )  and \
                             ( self.ego_wp_idx < 9000 ) :
@@ -114,7 +126,7 @@ class TLDetector(object):
                 self.RANDOM_DIST_IDX = []
 
 
-            if  self.ego_wp_idx >= 9000:
+            if  self.ego_wp_idx >= 9770:
                 # store the result
                 train_data_dict = {'Xtrain' : self.TRAINING_IMAGE, \
                                    'YLabel' : self.TRAINING_LABEL, \
@@ -230,10 +242,16 @@ class TLDetector(object):
                     line_wp_idx = temp_wp_idx
 
         if (closest_light):
-            state = self.get_light_state(closest_light)
             self.traffic_ego_dist = self.EgoTrafficLightDist(line_wp_idx, car_wp_idx)
-            self.light_state = state
-            return line_wp_idx, state
+            if self.traffic_ego_dist < 150.0:
+                # If distance between ego-car to traffic light less than 150 m
+                # characterize state of traffic light
+                state = self.get_light_state(closest_light)
+                self.light_state = state
+                return line_wp_idx, state
+            else:
+                # Otherwise, light state is unknown
+                return line_wp_idx, TrafficLight.UNKNOWN
 
         # Otherwise, set light-state to be -1
         self.light_state = -1
