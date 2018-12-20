@@ -5,15 +5,11 @@ We developed the software stack to guide a self-driving car around a test track.
 
 ### Drive.Auto Team Members 
 
-Harsh Nandan (harsh.nandan@gmail.com, [github](https://github.com/harshnandan)) - team lead
-
-Sachin Kolachana (sachin.kolachana@gmail.com, [github](https://github.com/sachink20aug))
-
-Shingte Li (shingte@gmail.com, [github](https://github.com/shingte))
-
-Tanto Sugiarto (tanto.sugiarto@gmail.com, [github](https://github.com/sutorimb))
-
-Mason Sutorius (sutorimb@umich.edu, [github](https://github.com/tsugiar))
+*Harsh Nandan (harsh.nandan@gmail.com, [github](https://github.com/harshnandan)) - team lead
+*Sachin Kolachana (sachin.kolachana@gmail.com, [github](https://github.com/sachink20aug))
+*Shingte Li (shingte@gmail.com, [github](https://github.com/shingte))
+*Tanto Sugiarto (tanto.sugiarto@gmail.com, [github](https://github.com/sutorimb))
+*Mason Sutorius (sutorimb@umich.edu, [github](https://github.com/tsugiar))
 
 ### Native Installation
 
